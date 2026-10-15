@@ -4,7 +4,7 @@
 
 Orbit turns your New Tab page into a collection of floating glass bubbles. Each bubble opens a bookmark, with its size reflecting how often you’ve visited that page recently.
 
-Designed for Vivaldi and Chromium-based browsers, Orbit combines a calm, customizable workspace with folder schedules, changing quotes, and controls that keep your bookmarks close at hand. Everything runs locally in your browser.
+Designed for all Chromium-based browsers, Orbit combines a calm, customizable workspace with folder schedules, changing quotes, and controls that keep your bookmarks close at hand. Everything runs locally in your browser.
 
 ## Your bookmarks at a glance
 
