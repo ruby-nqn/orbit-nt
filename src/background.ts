@@ -1,3 +1,4 @@
+import './icons/background';
 import {
   activityKey,
   libraryBookmarks,

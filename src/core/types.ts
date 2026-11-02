@@ -38,6 +38,9 @@ export interface Position {
   x: number;
   y: number;
   manual?: boolean;
+  detached?: boolean;
+  /** Center-attraction value when an automatic position was last settled. */
+  attraction?: number;
 }
 export interface Override {
   color?: string;

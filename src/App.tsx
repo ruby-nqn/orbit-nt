@@ -37,6 +37,7 @@ import {
 } from './core/bookmarks';
 import type { IncludedFolder } from './core/folders';
 import { layoutBubbles } from './core/layout';
+import { settleDrop } from './core/placement';
 import { modeLabel, windowVisits } from './core/scoring';
 import { safeUrl } from './core/urls';
 import type {
@@ -442,7 +443,11 @@ export default function App() {
               ...Object.fromEntries(
                 missing.map((n) => [
                   n.id,
-                  { x: n.x / size.width, y: n.y / size.height },
+                  {
+                    x: n.x / size.width,
+                    y: n.y / size.height,
+                    attraction: p.settings.attraction,
+                  },
                 ]),
               ),
             },
@@ -612,14 +617,18 @@ export default function App() {
               onDrop={(id, x, y) =>
                 update((p) => ({
                   ...p,
-                  positions: {
-                    ...p.positions,
-                    [id]: {
-                      x: Math.max(0, Math.min(1, x / size.width)),
-                      y: Math.max(0, Math.min(1, y / size.height)),
-                      manual: true,
+                  positions: settleDrop(
+                    entries,
+                    {
+                      ...size,
+                      spacing: p.settings.spacing,
+                      attraction: p.settings.attraction,
+                      physics: p.settings.physics,
+                      positions: p.positions,
                     },
-                  },
+                    id,
+                    { x, y },
+                  ),
                 }))
               }
               onMenu={(e, x, y) => setMenu({ entry: e, x, y })}
@@ -774,8 +783,9 @@ export default function App() {
             <ShieldCheck size={20} />
             <p>
               <strong>Just between you and your browser.</strong> Orbit uses
-              bookmarks and recent history to size your bubbles. Everything
-              stays on this device. No tracking. No accounts.
+              bookmarks and recent history to size your bubbles. Settings and
+              activity stay on this device. Orbit contacts bookmarked websites
+              to find sharper icons, without cookies. No tracking. No accounts.
             </p>
           </div>
           {!hasBrowser() && (

@@ -1,6 +1,6 @@
 {
   "name": "orbit-new-tab",
-  "version": "1.3.2",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,9 +9,11 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:browser": "node tests/browser.mjs && node tests/folders-browser.mjs && node tests/quotes-browser.mjs",
+    "test:browser": "node tests/browser.mjs && node tests/folders-browser.mjs && node tests/quotes-browser.mjs && node tests/drag-browser.mjs && node tests/icons-browser.mjs",
+    "test:icons:browser": "node tests/icons-browser.mjs",
     "test:folders:browser": "node tests/folders-browser.mjs",
     "test:quotes:browser": "node tests/quotes-browser.mjs",
+    "test:drag:browser": "node tests/drag-browser.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {

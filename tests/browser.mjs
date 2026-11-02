@@ -48,6 +48,12 @@ function check(name, condition) {
 }
 async function connect() {
   context = await chromium.launchPersistentContext(profile, options);
+  // Non-icon suites stay deterministic; only the local navigation fixture needs networking.
+  await context.route(/^https?:/, (route) =>
+    new URL(route.request().url()).hostname === '127.0.0.1'
+      ? route.continue()
+      : route.abort(),
+  );
   const worker =
     context.serviceWorkers()[0] ??
     (await context.waitForEvent('serviceworker', { timeout: 30000 }));
@@ -458,10 +464,10 @@ try {
     'a.bubble[aria-label^="Local favicon fixture,"]',
   );
   await localBubble.waitFor();
-  await localBubble.locator('.favicon-fallback').waitFor();
+  await localBubble.locator('img[data-icon-width="48"]').waitFor();
   check(
-    'missing cached favicons produce readable title initials',
-    (await localBubble.locator('.favicon-fallback').innerText()) === 'L',
+    'local website icon is automatically discovered when browser favicon cache is missing',
+    await localBubble.locator('img[data-icon-source="icon"]').isVisible(),
   );
   const ctrlOpened = context.waitForEvent('page');
   await localBubble.click({ modifiers: ['Control'] });

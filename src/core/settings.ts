@@ -23,7 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
   glass: 24,
   blur: 8,
   colorIntensity: 58,
-  faviconScale: 34,
+  faviconScale: 48,
   labels: 'hover',
   minSize: 64,
   maxSize: 160,
@@ -31,7 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   motion: true,
   floatIntensity: 2,
   physics: 50,
-  attraction: 45,
+  attraction: 80,
 };
 export const defaultPreferences = (): Preferences => ({
   defaultsVersion: 2,
@@ -235,10 +235,22 @@ export function validatePreferences(input: unknown): Preferences {
       v.x > 1 ||
       v.y < 0 ||
       v.y > 1 ||
-      ('manual' in v && typeof v.manual !== 'boolean')
+      ('manual' in v && typeof v.manual !== 'boolean') ||
+      ('detached' in v && typeof v.detached !== 'boolean') ||
+      ('attraction' in v &&
+        (typeof v.attraction !== 'number' ||
+          !Number.isFinite(v.attraction) ||
+          v.attraction < 0 ||
+          v.attraction > 100))
     )
       throw new Error('Invalid bubble position.');
-    return { x: v.x, y: v.y, ...(v.manual ? { manual: true } : {}) };
+    return {
+      x: v.x,
+      y: v.y,
+      ...(v.manual ? { manual: true } : {}),
+      ...(v.detached ? { detached: true } : {}),
+      ...(typeof v.attraction === 'number' ? { attraction: v.attraction } : {}),
+    };
   });
   return { defaultsVersion: 2, settings, overrides, positions };
 }

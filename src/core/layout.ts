@@ -1,20 +1,23 @@
 import { hash } from './urls';
 import type { BubbleEntry, LayoutNode, LayoutResult, Position } from './types';
-interface Options {
+export interface LayoutOptions {
   width: number;
   height: number;
   spacing: number;
   attraction: number;
   physics: number;
   positions: Record<string, Position>;
+  priorityId?: string;
 }
+export const attractionScale = (attraction: number) =>
+  (0.22 + (100 - attraction) / 220) / (0.22 + 55 / 220);
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y);
 // Deterministic spatial packing. Every committed circle is checked against all earlier
 // circles; no unstable simulation runs after settling. Pinned/manual anchors get priority.
 export function layoutBubbles(
   entries: BubbleEntry[],
-  options: Options,
+  options: LayoutOptions,
 ): LayoutResult {
   const { width, height, positions, attraction, physics } = options;
   if (width < 60 || height < 60)
@@ -24,6 +27,8 @@ export function layoutBubbles(
     overflow: string[] = [];
   const ordered = [...entries].sort(
     (a, b) =>
+      Number(b.id === options.priorityId) -
+        Number(a.id === options.priorityId) ||
       Number(b.pinned) - Number(a.pinned) ||
       Number(!!positions[b.id]?.manual) - Number(!!positions[a.id]?.manual) ||
       b.score - a.score ||
@@ -51,7 +56,8 @@ export function layoutBubbles(
     const spread =
       (0.22 + (100 - attraction) / 220) *
       Math.sqrt((rank + 0.5) / Math.max(1, ordered.length));
-    const centerScale = (0.22 + (100 - attraction) / 220) / (0.22 + 55 / 220);
+    const centerScale =
+      attractionScale(attraction) / attractionScale(saved?.attraction ?? 45);
     const target = saved
       ? saved.manual || entry.pinned
         ? { x: saved.x * width, y: saved.y * height }

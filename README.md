@@ -29,6 +29,8 @@ Your browser’s bookmark additions, renames, moves, and deletions appear automa
 
 Pinning fixes a bubble’s preferred size and gives its position priority. The layout may still adjust pinned bubbles to make room on smaller screens.
 
+While you drag, a bubble lifts slightly and follows your pointer. It settles from the point where you release it, with nearby bubbles making room when needed. Drops near the main cluster are gently drawn toward the center; clearly distant placements stay where you put them. Adjust **Center attraction** in **Settings → Layout** to change this pull, or set it to zero to turn it off. Pinned bubbles keep their chosen drop position without the inward pull.
+
 **Hide from Orbit** changes visibility only. Editing or removing a bookmark changes the bookmark in your browser; removal asks for confirmation.
 
 ### Search and keyboard shortcuts
@@ -101,16 +103,26 @@ The heading fades in softly, bubbles arrive with a quick outward motion, and hid
 
 ## Privacy and your data
 
-Orbit runs locally, without accounts, analytics, telemetry, or remote services. It does not inject code into the websites you visit.
+Orbit runs locally, without accounts, analytics, telemetry, or third-party icon services. It does not inject code into the websites you visit.
 
-| Browser access       | Why Orbit uses it                                                                                                     |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Bookmarks**        | Let you choose folders, display bookmarks, and reflect changes. Editing and removal happen only through your actions. |
-| **Browsing history** | Count available recent visits so bubble sizes can reflect your activity.                                              |
-| **Local storage**    | Remember settings, quotes, colors, positions, and calculated activity information.                                    |
-| **Website icons**    | Display icons already available in your browser’s cache.                                                              |
+| Browser access         | Why Orbit uses it                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Bookmarks**          | Let you choose folders, display bookmarks, and reflect changes. Editing and removal happen only through your actions. |
+| **Browsing history**   | Count available recent visits so bubble sizes can reflect your activity.                                              |
+| **Local storage**      | Remember settings, quotes, colors, positions, and calculated activity information.                                    |
+| **Website icons**      | Use the browser’s cached favicon immediately, then discover sharper icons directly from bookmarked sites.             |
+| **Website access**     | Read public icon declarations, manifests, and image assets over HTTP/HTTPS, without sending cookies or a referrer.    |
+| **Offscreen document** | Parse icon metadata and validate images in a temporary hidden extension document that closes when finished.           |
 
-Your preferences and calculated activity data stay in your browser profile. Orbit works offline; opening a bookmark takes you to its destination as usual. Settings do not automatically sync between devices.
+Your preferences, calculated activity data, and downloaded icons stay in your browser profile. Cached bookmarks and icons work offline; discovering new icons needs a connection. Opening a bookmark takes you to its destination as usual. Settings do not automatically sync between devices.
+
+### Sharper website icons, automatically
+
+Orbit checks a bookmarked page’s icon declarations and web app manifest, then tries common icon locations when needed. It measures the actual images and favors sharp SVGs and high-resolution icons. Icons keep their aspect ratio and transparency within the same glass bubbles. Your icon-size preference still applies.
+
+The browser’s favicon or a readable initial appears immediately while discovery runs. Downloaded icons are reused across tabs and browser restarts, checked again after about two weeks, and kept available offline. Unsuccessful discoveries retry after about a day.
+
+Automatic discovery needs website access for HTTP and HTTPS pages. Your browser may request approval for this new access when updating Orbit. Website requests go only to bookmarked pages and their declared icon or manifest hosts, with common icon paths as a fallback. Those sites receive ordinary network requests and can see your IP address. Orbit sends no cookies, browsing history, visit counts, or settings with them.
 
 ### Back up your preferences
 
@@ -124,7 +136,7 @@ Folder selections and bookmark-specific customizations depend on the browser pro
 
 - Activity reflects the history available to your browser. Missing or cleared history is not reconstructed; bookmarks still remain available.
 - Large history collections or restricted access can result in incomplete activity counts. Orbit shows a notice when counts are known to be incomplete or unavailable.
-- Website icons depend on your browser’s cache. When an icon is unavailable, Orbit shows the bookmark’s initial and a consistent fallback color.
+- Some sites block automated requests, require a sign-in, or publish only small icons. Orbit uses the best available safe image, then the browser’s cached favicon or the bookmark’s initial. It cannot reconstruct missing image detail. Restricting website access in your browser disables discovery on those sites while keeping the fallback available.
 - Large bookmark collections use compact bubbles and the complete bookmark list to keep every visible entry accessible.
 - Changes save locally and survive browser restarts. Open Orbit tabs share settings; if you edit the same settings in multiple tabs, the latest saved change wins.
 

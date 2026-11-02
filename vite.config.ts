@@ -6,7 +6,11 @@ export default defineConfig({
   build: {
     sourcemap: true,
     rollupOptions: {
-      input: { newtab: 'index.html', background: 'src/background.ts' },
+      input: {
+        newtab: 'index.html',
+        background: 'src/background.ts',
+        offscreen: 'offscreen.html',
+      },
       output: {
         entryFileNames: (chunk) =>
           chunk.name === 'background'

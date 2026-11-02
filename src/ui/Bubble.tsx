@@ -1,4 +1,5 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { flushSync } from 'react-dom';
 import { Pin } from 'lucide-react';
 import type { BubbleEntry, LayoutNode, Settings } from '../core/types';
 import { fallbackColor } from '../core/colors';
@@ -36,20 +37,65 @@ export function Bubble({
 }) {
   const { entering, finishEntrance } = useEntrance(entranceMotion);
   const [autoColor, setAutoColor] = useState<string>(),
-    [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+    [drag, setDrag] = useState<{ x: number; y: number; size: number } | null>(
+      null,
+    ),
+    [landing, setLanding] = useState(false);
+  const positionRef = useRef<HTMLDivElement>(null);
   const pointer = useRef<{
       id: number;
       startX: number;
       startY: number;
+      originX: number;
+      originY: number;
+      size: number;
       moved: boolean;
     } | null>(null),
     suppressClick = useRef(false);
+  useEffect(() => {
+    if (!entranceMotion || exiting) setLanding(false);
+    if (exiting) {
+      pointer.current = null;
+      setDrag(null);
+    }
+  }, [entranceMotion, exiting]);
+  useEffect(() => {
+    if (!landing) return;
+    const timer = setTimeout(() => setLanding(false), 280);
+    return () => clearTimeout(timer);
+  }, [landing]);
+  const cancelDrag = () => {
+    const moved = !!pointer.current?.moved;
+    pointer.current = null;
+    setDrag(null);
+    setLanding(moved && entranceMotion);
+    if (moved) suppressClick.current = true;
+  };
+  const dragPoint = (
+    p: NonNullable<typeof pointer.current>,
+    clientX: number,
+    clientY: number,
+  ) => {
+    const margin = p.size / 2 + 5;
+    return {
+      x: Math.max(
+        margin,
+        Math.min(bounds.width - margin, p.originX + clientX - p.startX),
+      ),
+      y: Math.max(
+        margin,
+        Math.min(bounds.height - margin, p.originY + clientY - p.startY),
+      ),
+      size: p.size,
+    };
+  };
   const color = entry.color ?? autoColor ?? fallbackColor(entry.url);
+  const diameter = drag?.size ?? node.size;
   const style = {
-    left: node.x,
-    top: node.y,
-    width: node.size,
-    height: node.size,
+    left: drag?.x ?? node.x,
+    top: drag?.y ?? node.y,
+    width: diameter,
+    height: diameter,
     '--accent': color,
     '--folder-accent': entry.folderColor ?? color,
     '--float': `${settings.floatIntensity}px`,
@@ -57,16 +103,12 @@ export function Bubble({
     '--enter-x': `${bounds.width / 2 - node.x}px`,
     '--enter-y': `${bounds.height / 2 - node.y}px`,
     '--enter-delay': `${(Math.round(node.x + node.y) % 4) * 8}ms`,
-    '--favicon-size': `${Math.max(20, (node.size * settings.faviconScale) / 100)}px`,
-    ...(drag
-      ? {
-          transform: `translate(calc(-50% + ${drag.x}px), calc(-50% + ${drag.y}px))`,
-        }
-      : {}),
+    '--favicon-size': `${Math.max(20, (diameter * settings.faviconScale) / 100)}px`,
   } as CSSProperties;
   return (
     <div
-      className={`bubble-position ${dimmed ? 'dimmed' : ''} ${selected ? 'selected' : ''} ${drag ? 'dragging' : ''} ${exiting ? 'exiting' : ''}`}
+      ref={positionRef}
+      className={`bubble-position ${dimmed ? 'dimmed' : ''} ${selected ? 'selected' : ''} ${drag ? 'dragging' : ''} ${landing ? 'landing' : ''} ${exiting ? 'exiting' : ''}`}
       style={style}
       inert={exiting}
       aria-hidden={exiting || undefined}
@@ -90,9 +132,11 @@ export function Bubble({
             onFocus={finishEntrance}
             onClick={(e) => {
               if (suppressClick.current) {
-                e.preventDefault();
                 suppressClick.current = false;
-                return;
+                if (e.detail !== 0) {
+                  e.preventDefault();
+                  return;
+                }
               }
               if (
                 entry.id.startsWith('domain:') &&
@@ -109,6 +153,15 @@ export function Bubble({
               onMenu(entry, e.clientX, e.clientY);
             }}
             onKeyDown={(e) => {
+              if (e.key === 'Escape' && pointer.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                const id = pointer.current.id;
+                cancelDrag();
+                if (e.currentTarget.hasPointerCapture(id))
+                  e.currentTarget.releasePointerCapture(id);
+                return;
+              }
               if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
                 e.preventDefault();
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -120,43 +173,65 @@ export function Bubble({
               suppressClick.current = false;
               if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey)
                 return;
+              setLanding(false);
+              const root = positionRef.current!;
+              const rect = root.getBoundingClientRect();
+              const parent = (
+                root.offsetParent as HTMLElement
+              ).getBoundingClientRect();
               pointer.current = {
                 id: e.pointerId,
                 startX: e.clientX,
                 startY: e.clientY,
+                originX: rect.left + rect.width / 2 - parent.left,
+                originY: rect.top + rect.height / 2 - parent.top,
+                size: rect.width,
                 moved: false,
               };
+              // Capture from press so a fast first movement cannot outrun the circle.
+              e.currentTarget.setPointerCapture(e.pointerId);
             }}
             onPointerMove={(e) => {
               const p = pointer.current;
               if (!p || p.id !== e.pointerId) return;
               const x = e.clientX - p.startX,
                 y = e.clientY - p.startY;
-              if (Math.hypot(x, y) > 6) {
+              if (!p.moved && Math.hypot(x, y) > 6) {
                 p.moved = true;
-                e.currentTarget.setPointerCapture(e.pointerId);
               }
-              if (p.moved) setDrag({ x, y });
+              if (p.moved) setDrag(dragPoint(p, e.clientX, e.clientY));
             }}
             onPointerUp={(e) => {
               const p = pointer.current;
-              if (p?.moved) {
+              if (
+                p &&
+                (p.moved ||
+                  Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > 6)
+              ) {
                 suppressClick.current = true;
-                onDrop(
-                  entry.id,
-                  node.x + e.clientX - p.startX,
-                  node.y + e.clientY - p.startY,
-                );
+                const release = dragPoint(p, e.clientX, e.clientY);
+                // Commit the pointer's final position without transitions before handing
+                // the same left/top coordinates to the settled collision layout.
+                flushSync(() => setDrag(release));
+                positionRef.current?.getBoundingClientRect();
+                onDrop(entry.id, release.x, release.y);
+                setLanding(entranceMotion);
               }
+              pointer.current = null;
               if (e.currentTarget.hasPointerCapture(e.pointerId))
                 e.currentTarget.releasePointerCapture(e.pointerId);
-              pointer.current = null;
               setDrag(null);
             }}
-            onPointerCancel={() => {
-              pointer.current = null;
-              setDrag(null);
-              suppressClick.current = true;
+            onPointerCancel={cancelDrag}
+            onLostPointerCapture={() => {
+              if (pointer.current) cancelDrag();
+            }}
+            onAnimationEnd={(event) => {
+              if (
+                event.target === event.currentTarget &&
+                event.animationName === 'bubble-land'
+              )
+                setLanding(false);
             }}
           >
             <Favicon

@@ -62,6 +62,7 @@ async function connect(clock = false) {
     path.join(run, 'profile'),
     options,
   );
+  await context.route(/^https?:/, (route) => route.abort());
   worker =
     context.serviceWorkers()[0] ??
     (await context.waitForEvent('serviceworker'));

@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { extractColor } from '../core/colors';
 import { hasBrowser } from '../data/storage';
+import { useWebsiteIcon } from '../icons/client';
 function fingerprint(image: HTMLImageElement): string | null {
   try {
     const canvas = document.createElement('canvas');
@@ -55,8 +56,13 @@ function FaviconImage({
   style?: CSSProperties;
 }) {
   const [failed, setFailed] = useState(false),
-    src = faviconUrl(url);
-  if (!src || failed)
+    [upgradeFailed, setUpgradeFailed] = useState<string>(),
+    upgraded = useWebsiteIcon(url),
+    fallback = faviconUrl(url),
+    highResolution =
+      upgraded && upgraded.src !== upgradeFailed ? upgraded : undefined,
+    src = highResolution?.src ?? (!failed ? fallback : undefined);
+  if (!src)
     return (
       <span className="favicon-fallback" aria-hidden="true" style={style}>
         {(Array.from(title.trim())[0] ?? '•').toUpperCase()}
@@ -68,20 +74,32 @@ function FaviconImage({
       src={src}
       alt=""
       draggable={false}
-      style={style}
-      onError={() => setFailed(true)}
+      style={
+        {
+          ...style,
+          '--icon-optical-scale': highResolution
+            ? Math.min(1.18, 1 / Math.sqrt(highResolution.record.coverage))
+            : 1,
+        } as CSSProperties
+      }
+      decoding="async"
+      data-icon-source={highResolution?.record.source ?? 'chrome'}
+      data-icon-width={highResolution?.record.width}
+      onError={() =>
+        highResolution ? setUpgradeFailed(highResolution.src) : setFailed(true)
+      }
       onLoad={async (e) => {
+        // Keep the established bubble accent: upgrading the image does not recolor it.
+        if (highResolution) return;
         const image = e.currentTarget;
         const pixels = fingerprint(image);
+        const color = onColor ? extractColor(image) : null;
         const fallback = await defaultFingerprint();
         if (pixels && fallback && pixels === fallback) {
           setFailed(true);
           return;
         }
-        if (onColor) {
-          const color = extractColor(image);
-          if (color) onColor(color);
-        }
+        if (onColor && color) onColor(color);
       }}
     />
   );

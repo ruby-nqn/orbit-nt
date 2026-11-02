@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Orbit New Tab",
-  "version": "1.3.2",
+  "version": "1.5.0",
   "description": "Your bookmarks, in motion. A private, activity-aware new tab with floating glass bubbles.",
   "minimum_chrome_version": "111",
-  "permissions": ["bookmarks", "history", "storage", "favicon"],
+  "permissions": ["bookmarks", "history", "storage", "favicon", "offscreen"],
+  "host_permissions": ["http://*/*", "https://*/*"],
   "chrome_url_overrides": { "newtab": "index.html" },
   "background": { "service_worker": "background.js", "type": "module" },
   "icons": {
@@ -13,6 +14,6 @@
     "128": "icons/icon-128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; img-src 'self' data: blob:; connect-src 'none'; style-src 'self' 'unsafe-inline'; base-uri 'self'"
+    "extension_pages": "script-src 'self'; object-src 'none'; img-src 'self' data: blob:; connect-src http: https:; style-src 'self' 'unsafe-inline'; base-uri 'self'"
   }
 }

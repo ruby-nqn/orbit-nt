@@ -622,6 +622,11 @@ export function Settings({
                 onChange={(v) => set('attraction', v)}
               />
               <p className="muted">
+                Center attraction gently gathers nearby drops. Place a bubble
+                clearly outside the cluster to keep it separate; set attraction
+                to zero to turn off the pull.
+              </p>
+              <p className="muted">
                 On smaller screens, bubbles become more compact. The bookmark
                 list always contains your complete collection.
               </p>
@@ -675,8 +680,10 @@ export function Settings({
                 <p>
                   Orbit reads bookmarks and available browsing history to
                   arrange your space. Settings, positions and derived visit
-                  counts stay in this browser profile. No accounts, analytics,
-                  external servers or background website requests.
+                  counts stay in this browser profile. To find sharper icons,
+                  Orbit contacts bookmarked websites and their declared icon
+                  hosts without cookies. Icons are cached locally. No accounts,
+                  analytics or third-party icon services.
                 </p>
               </div>
             </Section>
@@ -747,7 +754,7 @@ export function Settings({
               </button>
             </Section>
             <div className="version-label">
-              <SlidersHorizontal size={14} /> Orbit New Tab · 1.3.2
+              <SlidersHorizontal size={14} /> Orbit New Tab · 1.5.0
             </div>
           </>
         )}
